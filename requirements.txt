@@ -1,0 +1,20 @@
+# Core
+python-multipart
+requests
+pickle-mixin
+
+# Data & ML
+pandas
+scikit-learn
+numpy
+
+# NLP / Resume parsing
+PyPDF2
+python-docx
+
+# Backend
+fastapi
+uvicorn
+
+# Frontend
+streamlit
