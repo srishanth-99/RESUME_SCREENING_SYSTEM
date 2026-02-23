@@ -31,7 +31,6 @@ add_bg_image("assets/bg.png.jpg")
 # -----------------------------
 # API
 # -----------------------------
-API_URL = "http://127.0.0.1:8000/analyze"
 
 st.title("📄 Resume Screening System")
 
@@ -74,6 +73,7 @@ if uploaded_file:
             st.error("⏳ Backend took too long to respond.")
         except Exception as e:
             st.error(f"⚠️ Unexpected error: {e}")
+
 
 
 
