@@ -27,7 +27,7 @@ def add_bg_image(image_path):
         unsafe_allow_html=True
     )
 
-add_bg_image("C:\\Users\\mrnit\\Downloads\\sri.png")
+add_bg_image("assets/bg.png")
 
 # -----------------------------
 # API
@@ -75,3 +75,4 @@ if uploaded_file:
             st.error("⏳ Backend took too long to respond.")
         except Exception as e:
             st.error(f"⚠️ Unexpected error: {e}")
+
