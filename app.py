@@ -1,6 +1,5 @@
 import base64
 import streamlit as st
-import requests
 from utils.resume_parser import extract_text
 
 # -----------------------------
@@ -75,5 +74,6 @@ if uploaded_file:
             st.error("⏳ Backend took too long to respond.")
         except Exception as e:
             st.error(f"⚠️ Unexpected error: {e}")
+
 
 
