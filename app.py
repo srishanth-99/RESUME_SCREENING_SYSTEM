@@ -27,7 +27,7 @@ def add_bg_image(image_path):
         unsafe_allow_html=True
     )
 
-add_bg_image("C:\\WEB dev\\OneDrive\\Desktop\\resume screening system\\assets\\bg1.png.jpg")
+add_bg_image("assets\bg1.png.jpg")
 
 # -----------------------------
 # API
@@ -75,3 +75,4 @@ if uploaded_file:
             st.error("⏳ Backend took too long to respond.")
         except Exception as e:
             st.error(f"⚠️ Unexpected error: {e}")
+
