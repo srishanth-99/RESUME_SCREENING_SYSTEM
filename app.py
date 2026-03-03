@@ -1,12 +1,7 @@
-import base64
 import streamlit as st
+import base64
 import os
 from utils.resume_parser import extract_text
-
-# -----------------------------
-# CONFIG
-# -----------------------------
-API_URL = "http://127.0.0.1:8000/analyze"  # Change when backend is deployed
 
 # -----------------------------
 # PAGE SETTINGS
@@ -29,9 +24,12 @@ def add_bg_image(image_path):
             f"""
             <style>
             .stApp {{
-                background-image: url("data:image/jpg;base64,{encoded}");
+                background-image: url("data:image/png;base64,{encoded}");
                 background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
             }}
+
             .block-container {{
                 background-color: rgba(255, 255, 255, 0.90);
                 padding: 2rem;
@@ -44,7 +42,7 @@ def add_bg_image(image_path):
     else:
         st.warning("⚠️ Background image not found. Check assets folder.")
 
-# Call background image
+# Change filename if needed
 add_bg_image("assets/bg1.png")
 
 # -----------------------------
@@ -86,22 +84,16 @@ if uploaded_file:
     if st.button("Analyze Resume"):
 
         with st.spinner("🔍 Analyzing resume..."):
+
             try:
-                response = requests.post(
-                    API_URL,
-                    json={"resume_text": resume_text},
-                    timeout=15
-                )
+                # 🔥 Dummy Prediction (Replace later with ML model)
+                data = {
+                    "predicted_role": "Data Analyst",
+                    "resume_score": 85,
+                    "resume_strength": "Strong",
+                    "skills": ["Python", "SQL", "Machine Learning", "Excel"]
+                }
 
-                response.raise_for_status()
-                data = response.json()
-
-                # Backend validation error
-                if "error" in data:
-                    st.error(data["error"])
-                    st.stop()
-
-                # Show results
                 st.success("✅ Resume analyzed successfully")
 
                 st.markdown(
@@ -113,6 +105,7 @@ if uploaded_file:
                 st.markdown(
                     f"### 📌 Resume Strength: **{data['resume_strength']}**"
                 )
+
                 st.markdown("### 🛠 Extracted Skills")
                 st.write(", ".join(data["skills"]))
 
@@ -126,9 +119,5 @@ if uploaded_file:
                     mime="text/plain"
                 )
 
-            except requests.exceptions.ConnectionError:
-                st.error("❌ Backend is not running or not accessible.")
-            except requests.exceptions.Timeout:
-                st.error("⏳ Backend took too long to respond.")
             except Exception as e:
                 st.error(f"⚠️ Unexpected error: {e}")
