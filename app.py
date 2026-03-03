@@ -32,9 +32,7 @@ def add_bg_image(image_path):
         unsafe_allow_html=True
     )
 
-add_bg_image(
-    "C://WEB dev//OneDrive//Desktop//resume screening system//assets//bg1.png.jpg"
-)
+add_bg_image("assets/bg1.jpg")
 
 # -----------------------------
 # Report Generator
