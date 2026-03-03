@@ -1,6 +1,12 @@
 import base64
 import streamlit as st
+import requests
 from utils.resume_parser import extract_text
+
+# -----------------------------
+# Config
+# -----------------------------
+API_URL = "http://127.0.0.1:8000/analyze"
 
 # -----------------------------
 # Background Image
@@ -26,24 +32,35 @@ def add_bg_image(image_path):
         unsafe_allow_html=True
     )
 
-# If image exists in assets folder
-add_bg_image("assets/bg1.png.jpg")
+add_bg_image(
+    "C://WEB dev//OneDrive//Desktop//resume screening system//assets//bg1.png.jpg"
+)
 
 # -----------------------------
-# Skill Keywords
+# Report Generator
 # -----------------------------
-SKILLS_DB = [
-    "python", "java", "c++", "sql",
-    "machine learning", "data analysis",
-    "power bi", "excel", "tableau",
-    "deep learning", "html", "css"
-]
+def generate_report(data):
+    return f"""
+RESUME SCREENING REPORT
+======================
+
+Predicted Role:
+{data['predicted_role']}
+
+Resume Quality Score:
+{data['resume_score']}%
+
+Resume Strength:
+{data['resume_strength']}
+
+Extracted Skills:
+{', '.join(data['skills'])}
+"""
 
 # -----------------------------
-# Streamlit UI
+# UI
 # -----------------------------
 st.title("📄 Resume Screening System")
-
 st.info("📌 Upload only a valid resume in PDF or DOCX format.")
 
 uploaded_file = st.file_uploader(
@@ -55,47 +72,52 @@ if uploaded_file:
     resume_text = extract_text(uploaded_file)
 
     if st.button("Analyze Resume"):
+        with st.spinner("🔍 Analyzing resume..."):
+            try:
+                response = requests.post(
+                    API_URL,
+                    json={"resume_text": resume_text},
+                    timeout=10
+                )
+                response.raise_for_status()
+                data = response.json()
 
-        resume_text_lower = resume_text.lower()
+                # ❌ Backend validation error
+                if "error" in data:
+                    st.error(data["error"])
+                    st.stop()
 
-        # Extract Skills
-        found_skills = []
-        for skill in SKILLS_DB:
-            if skill in resume_text_lower:
-                found_skills.append(skill.title())
+                # ✅ Show results
+                st.success("✅ Resume analyzed successfully")
 
-        # Basic Score Logic
-        resume_score = min(len(found_skills) * 10, 100)
+                st.markdown(
+                    f"### 🎯 Predicted Role: **{data['predicted_role']}**"
+                )
+                st.markdown(
+                    f"### 📊 Resume Quality Score: **{data['resume_score']}%**"
+                )
+                st.markdown(
+                    f"### 📌 Resume Strength: **{data['resume_strength']}**"
+                )
+                st.markdown("### 🛠 Extracted Skills")
+                st.write(", ".join(data["skills"]))
 
-        # Predicted Role Logic
-        if "machine learning" in resume_text_lower or "deep learning" in resume_text_lower:
-            predicted_role = "Machine Learning Engineer"
-        elif "power bi" in resume_text_lower or "tableau" in resume_text_lower:
-            predicted_role = "Business Intelligence Analyst"
-        elif "python" in resume_text_lower or "sql" in resume_text_lower:
-            predicted_role = "Data Analyst"
-        else:
-            predicted_role = "General Candidate"
+                # 📄 Download report
+                report_text = generate_report(data)
 
-        # Strength
-        if resume_score >= 70:
-            resume_strength = "Strong"
-        elif resume_score >= 40:
-            resume_strength = "Moderate"
-        else:
-            resume_strength = "Needs Improvement"
+                st.download_button(
+                    label="⬇️ Download Resume Report",
+                    data=report_text,
+                    file_name="resume_report.txt",
+                    mime="text/plain"
+                )
 
-        # -----------------------------
-        # Display Results
-        # -----------------------------
-        st.success("✅ Resume analyzed successfully")
-
-        st.markdown(f"### 🎯 Predicted Role: **{predicted_role}**")
-        st.markdown(f"### 📊 Resume Quality Score: **{resume_score}%**")
-        st.markdown(f"### 📌 Resume Strength: **{resume_strength}**")
-
-        st.markdown("### 🛠 Extracted Skills")
-        if found_skills:
-            st.write(", ".join(found_skills))
-        else:
-            st.write("No major skills detected.")
+            except requests.exceptions.ConnectionError:
+                st.error(
+                    "❌ Backend is not running. Please start the FastAPI server."
+                )
+            except requests.exceptions.Timeout:
+                st.error("⏳ Backend took too long to respond.")
+            except Exception as e:
+                st.error(f"⚠️ Unexpected error: {e}")
+        
