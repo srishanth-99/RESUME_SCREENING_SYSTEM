@@ -1,6 +1,5 @@
 import base64
 import streamlit as st
-import requests
 import os
 from utils.resume_parser import extract_text
 
