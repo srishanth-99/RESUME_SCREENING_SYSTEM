@@ -1,37 +1,51 @@
 import base64
 import streamlit as st
 import requests
+import os
 from utils.resume_parser import extract_text
 
 # -----------------------------
-# Config
+# CONFIG
 # -----------------------------
-API_URL = "http://127.0.0.1:8000/analyze"
+API_URL = "http://127.0.0.1:8000/analyze"  # Change when backend is deployed
 
 # -----------------------------
-# Background Image
+# PAGE SETTINGS
+# -----------------------------
+st.set_page_config(
+    page_title="Resume Screening System",
+    page_icon="📄",
+    layout="centered"
+)
+
+# -----------------------------
+# SAFE Background Image
 # -----------------------------
 def add_bg_image(image_path):
-    with open(image_path, "rb") as img:
-        encoded = base64.b64encode(img.read()).decode()
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as img:
+            encoded = base64.b64encode(img.read()).decode()
 
-    st.markdown(
-        f"""
-        <style>
-        .stApp {{
-            background-image: url("data:image/jpg;base64,{encoded}");
-            background-size: cover;
-        }}
-        .block-container {{
-            background-color: rgba(255, 255, 255, 0.85);
-            padding: 2rem;
-            border-radius: 12px;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+        st.markdown(
+            f"""
+            <style>
+            .stApp {{
+                background-image: url("data:image/jpg;base64,{encoded}");
+                background-size: cover;
+            }}
+            .block-container {{
+                background-color: rgba(255, 255, 255, 0.90);
+                padding: 2rem;
+                border-radius: 12px;
+            }}
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+    else:
+        st.warning("⚠️ Background image not found. Check assets folder.")
 
+# Call background image
 add_bg_image("assets/bg1.jpg")
 
 # -----------------------------
@@ -67,25 +81,28 @@ uploaded_file = st.file_uploader(
 )
 
 if uploaded_file:
+
     resume_text = extract_text(uploaded_file)
 
     if st.button("Analyze Resume"):
+
         with st.spinner("🔍 Analyzing resume..."):
             try:
                 response = requests.post(
                     API_URL,
                     json={"resume_text": resume_text},
-                    timeout=10
+                    timeout=15
                 )
+
                 response.raise_for_status()
                 data = response.json()
 
-                # ❌ Backend validation error
+                # Backend validation error
                 if "error" in data:
                     st.error(data["error"])
                     st.stop()
 
-                # ✅ Show results
+                # Show results
                 st.success("✅ Resume analyzed successfully")
 
                 st.markdown(
@@ -100,7 +117,7 @@ if uploaded_file:
                 st.markdown("### 🛠 Extracted Skills")
                 st.write(", ".join(data["skills"]))
 
-                # 📄 Download report
+                # Download Report
                 report_text = generate_report(data)
 
                 st.download_button(
@@ -111,11 +128,8 @@ if uploaded_file:
                 )
 
             except requests.exceptions.ConnectionError:
-                st.error(
-                    "❌ Backend is not running. Please start the FastAPI server."
-                )
+                st.error("❌ Backend is not running or not accessible.")
             except requests.exceptions.Timeout:
                 st.error("⏳ Backend took too long to respond.")
             except Exception as e:
                 st.error(f"⚠️ Unexpected error: {e}")
-        
