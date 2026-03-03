@@ -46,7 +46,7 @@ def add_bg_image(image_path):
         st.warning("⚠️ Background image not found. Check assets folder.")
 
 # Call background image
-add_bg_image("assets\bg1.png.jpg")
+add_bg_image("assets\bg1.png")
 
 # -----------------------------
 # Report Generator
