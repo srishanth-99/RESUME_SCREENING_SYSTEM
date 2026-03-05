@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # -----------------------------
-# SAFE Background Image
+# Background Image
 # -----------------------------
 def add_bg_image(image_path):
     if os.path.exists(image_path):
@@ -31,24 +31,79 @@ def add_bg_image(image_path):
             }}
 
             .block-container {{
-                background-color: rgba(255, 255, 255, 0.90);
+                background-color: rgba(255,255,255,0.9);
                 padding: 2rem;
-                border-radius: 12px;
+                border-radius: 10px;
             }}
             </style>
             """,
             unsafe_allow_html=True
         )
     else:
-        st.warning("⚠️ Background image not found. Check assets folder.")
+        st.warning("⚠️ Background image not found.")
 
-# Change filename if needed
 add_bg_image("assets/bg1.png.jpg")
+
+# -----------------------------
+# Skill Detection + Role Prediction
+# -----------------------------
+def analyze_resume(resume_text):
+
+    skills_db = [
+        "python","sql","excel","machine learning","data analysis",
+        "tableau","power bi","java","c++","html","css","javascript",
+        "deep learning","nlp","pandas","numpy","tensorflow"
+    ]
+
+    detected_skills = []
+    text = resume_text.lower()
+
+    for skill in skills_db:
+        if skill in text:
+            detected_skills.append(skill.title())
+
+    # -----------------------------
+    # Role Prediction
+    # -----------------------------
+    if "machine learning" in text or "deep learning" in text:
+        role = "Machine Learning Engineer"
+
+    elif "python" in text and "sql" in text:
+        role = "Data Analyst"
+
+    elif "html" in text or "css" in text or "javascript" in text:
+        role = "Web Developer"
+
+    elif "java" in text or "c++" in text:
+        role = "Software Developer"
+
+    else:
+        role = "General IT Role"
+
+    # -----------------------------
+    # Resume Score
+    # -----------------------------
+    score = min(len(detected_skills) * 10, 100)
+
+    if score > 70:
+        strength = "Strong"
+    elif score > 40:
+        strength = "Average"
+    else:
+        strength = "Weak"
+
+    return {
+        "predicted_role": role,
+        "resume_score": score,
+        "resume_strength": strength,
+        "skills": detected_skills
+    }
 
 # -----------------------------
 # Report Generator
 # -----------------------------
 def generate_report(data):
+
     return f"""
 RESUME SCREENING REPORT
 ======================
@@ -70,54 +125,64 @@ Extracted Skills:
 # UI
 # -----------------------------
 st.title("📄 Resume Screening System")
-st.info("📌 Upload only a valid resume in PDF or DOCX format.")
+
+st.info("📌 Upload a resume in PDF or DOCX format")
 
 uploaded_file = st.file_uploader(
-    "Upload your resume (PDF / DOCX only)",
-    type=["pdf", "docx"]
+    "Upload Resume",
+    type=["pdf","docx"]
 )
 
+# -----------------------------
+# PROCESS RESUME
+# -----------------------------
 if uploaded_file:
 
-    resume_text = extract_text(uploaded_file)
+    st.success("✅ Resume Uploaded Successfully")
 
-    if st.button("Analyze Resume"):
+    try:
+        resume_text = extract_text(uploaded_file)
 
-        with st.spinner("🔍 Analyzing resume..."):
+        if not resume_text:
+            st.error("⚠️ Unable to extract text from resume")
 
-            try:
-                # 🔥 Dummy Prediction (Replace later with ML model)
-                data = {
-                    "predicted_role": "Data Analyst",
-                    "resume_score": 85,
-                    "resume_strength": "Strong",
-                    "skills": ["Python", "SQL", "Machine Learning", "Excel"]
-                }
+        else:
 
-                st.success("✅ Resume analyzed successfully")
+            if st.button("Analyze Resume"):
 
-                st.markdown(
-                    f"### 🎯 Predicted Role: **{data['predicted_role']}**"
-                )
-                st.markdown(
-                    f"### 📊 Resume Quality Score: **{data['resume_score']}%**"
-                )
-                st.markdown(
-                    f"### 📌 Resume Strength: **{data['resume_strength']}**"
-                )
+                with st.spinner("🔍 Analyzing Resume..."):
 
-                st.markdown("### 🛠 Extracted Skills")
-                st.write(", ".join(data["skills"]))
+                    data = analyze_resume(resume_text)
 
-                # Download Report
-                report_text = generate_report(data)
+                    st.success("✅ Analysis Complete")
 
-                st.download_button(
-                    label="⬇️ Download Resume Report",
-                    data=report_text,
-                    file_name="resume_report.txt",
-                    mime="text/plain"
-                )
+                    st.markdown(
+                        f"### 🎯 Predicted Role: **{data['predicted_role']}**"
+                    )
 
-            except Exception as e:
-                st.error(f"⚠️ Unexpected error: {e}")
+                    st.markdown(
+                        f"### 📊 Resume Score: **{data['resume_score']}%**"
+                    )
+
+                    st.markdown(
+                        f"### 💪 Resume Strength: **{data['resume_strength']}**"
+                    )
+
+                    st.markdown("### 🛠 Detected Skills")
+
+                    if data["skills"]:
+                        st.write(", ".join(data["skills"]))
+                    else:
+                        st.write("No skills detected")
+
+                    report_text = generate_report(data)
+
+                    st.download_button(
+                        label="⬇ Download Report",
+                        data=report_text,
+                        file_name="resume_report.txt",
+                        mime="text/plain"
+                    )
+
+    except Exception as e:
+        st.error(f"⚠️ Error processing resume: {e}")
