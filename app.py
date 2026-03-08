@@ -42,7 +42,7 @@ def add_bg_image(image_path):
     else:
         st.warning("⚠️ Background image not found.")
 
-add_bg_image("assets/bg1.png")
+add_bg_image("assets/bg1.png.jpg")
 
 # -----------------------------
 # Skill Detection + Role Prediction
