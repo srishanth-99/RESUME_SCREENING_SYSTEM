@@ -1,2 +1,10 @@
-# RESUME_SCREENING_SYSTEM
-An AI-powered Resume Screening System that uses NLP and machine learning to analyze resumes, match them with job descriptions, rank candidates by relevance, and streamline the hiring process.”
+## Project Screenshots
+
+### Resume Upload Page
+![Upload Page](upload.png)
+
+### Resume Analysis
+![Analysis](analysis.png)
+
+### Report Page
+![Report](report.png)
