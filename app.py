@@ -2,6 +2,7 @@ import streamlit as st
 import base64
 import os
 from utils.resume_parser import extract_text
+from backend.skills import extract_skills   # ✅ FIXED (no hardcoding)
 
 # -----------------------------
 # PAGE SETTINGS
@@ -42,28 +43,22 @@ def add_bg_image(image_path):
     else:
         st.warning("⚠️ Background image not found.")
 
-add_bg_image("assets/bg1.png.jpg")
+# ✅ FIXED path (remove double extension if needed)
+add_bg_image("assets/bg1.png")
+
 
 # -----------------------------
-# Skill Detection + Role Prediction
+# Resume Analysis
 # -----------------------------
 def analyze_resume(resume_text):
 
-    skills_db = [
-        "python","sql","excel","machine learning","data analysis",
-        "tableau","power bi","java","c++","html","css","javascript",
-        "deep learning","nlp","pandas","numpy","tensorflow"
-    ]
-
-    detected_skills = []
     text = resume_text.lower()
 
-    for skill in skills_db:
-        if skill in text:
-            detected_skills.append(skill.title())
+    # ✅ Use backend function
+    detected_skills = extract_skills(resume_text)
 
     # -----------------------------
-    # Role Prediction
+    # Role Prediction (Improved)
     # -----------------------------
     if "machine learning" in text or "deep learning" in text:
         role = "Machine Learning Engineer"
@@ -71,20 +66,31 @@ def analyze_resume(resume_text):
     elif "python" in text and "sql" in text:
         role = "Data Analyst"
 
-    elif "html" in text or "css" in text or "javascript" in text:
+    elif any(x in text for x in ["html", "css", "javascript"]):
         role = "Web Developer"
 
-    elif "java" in text or "c++" in text:
+    elif any(x in text for x in ["java", "c++"]):
         role = "Software Developer"
 
     else:
         role = "General IT Role"
 
     # -----------------------------
-    # Resume Score
+    # Better Resume Score
     # -----------------------------
-    score = min(len(detected_skills) * 10, 100)
+    score = len(detected_skills) * 5
 
+    if "experience" in text:
+        score += 30
+
+    if "education" in text:
+        score += 20
+
+    score = min(score, 100)
+
+    # -----------------------------
+    # Strength
+    # -----------------------------
     if score > 70:
         strength = "Strong"
     elif score > 40:
@@ -99,11 +105,11 @@ def analyze_resume(resume_text):
         "skills": detected_skills
     }
 
+
 # -----------------------------
 # Report Generator
 # -----------------------------
 def generate_report(data):
-
     return f"""
 RESUME SCREENING REPORT
 ======================
@@ -121,6 +127,7 @@ Extracted Skills:
 {', '.join(data['skills'])}
 """
 
+
 # -----------------------------
 # UI
 # -----------------------------
@@ -130,8 +137,9 @@ st.info("📌 Upload a resume in PDF or DOCX format")
 
 uploaded_file = st.file_uploader(
     "Upload Resume",
-    type=["pdf","docx"]
+    type=["pdf", "docx"]
 )
+
 
 # -----------------------------
 # PROCESS RESUME
@@ -147,26 +155,17 @@ if uploaded_file:
             st.error("⚠️ Unable to extract text from resume")
 
         else:
+            if st.button("🔍 Analyze Resume"):
 
-            if st.button("Analyze Resume"):
-
-                with st.spinner("🔍 Analyzing Resume..."):
+                with st.spinner("Analyzing Resume..."):
 
                     data = analyze_resume(resume_text)
 
                     st.success("✅ Analysis Complete")
 
-                    st.markdown(
-                        f"### 🎯 Predicted Role: **{data['predicted_role']}**"
-                    )
-
-                    st.markdown(
-                        f"### 📊 Resume Score: **{data['resume_score']}%**"
-                    )
-
-                    st.markdown(
-                        f"### 💪 Resume Strength: **{data['resume_strength']}**"
-                    )
+                    st.markdown(f"### 🎯 Predicted Role: **{data['predicted_role']}**")
+                    st.markdown(f"### 📊 Resume Score: **{data['resume_score']}%**")
+                    st.markdown(f"### 💪 Resume Strength: **{data['resume_strength']}**")
 
                     st.markdown("### 🛠 Detected Skills")
 
