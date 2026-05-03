@@ -1,203 +1,194 @@
 import streamlit as st
 import base64
 import os
-import matplotlib.pyplot as plt
-
 from utils.resume_parser import extract_text
 from backend.skills import extract_skills
+import matplotlib.pyplot as plt
 
 # -----------------------------
-# PAGE SETTINGS
+# PAGE CONFIG
 # -----------------------------
 st.set_page_config(
-    page_title="AI Resume Screening System",
+    page_title="AI Resume ATS System",
     page_icon="📄",
-    layout="centered"
+    layout="wide"
 )
 
 # -----------------------------
-# PROFESSIONAL UI STYLING
+# UI STYLE
 # -----------------------------
 st.markdown("""
 <style>
+
 .stApp {
-    background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+    background: linear-gradient(to right, #0f172a, #1e293b);
     color: white;
 }
 
-h1, h2, h3 {
-    color: white;
+.title {
+    font-size: 38px;
+    font-weight: 800;
     text-align: center;
+    color: #38bdf8;
 }
 
-.block-container {
-    background-color: rgba(255,255,255,0.92);
-    padding: 2rem;
+.card {
+    background: #111827;
+    padding: 20px;
     border-radius: 15px;
-    color: black;
+    margin: 10px 0px;
+    box-shadow: 0px 4px 15px rgba(0,0,0,0.3);
 }
 
 .stButton>button {
-    background-color: #00c6ff;
+    background: #38bdf8;
     color: white;
+    font-weight: bold;
     border-radius: 10px;
+    height: 45px;
 }
+
 </style>
 """, unsafe_allow_html=True)
 
 # -----------------------------
-# BACKGROUND IMAGE (optional)
+# HEADER
 # -----------------------------
-def add_bg_image():
-    image_path = os.path.join("assets", "bg1.png.jpg")
-
-    if os.path.exists(image_path):
-        with open(image_path, "rb") as img:
-            encoded = base64.b64encode(img.read()).decode()
-
-        st.markdown(
-            f"""
-            <style>
-            .stApp {{
-                background-image: url("data:image/jpg;base64,{encoded}");
-                background-size: cover;
-                background-position: center;
-                background-repeat: no-repeat;
-            }}
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
-
-add_bg_image()
+st.markdown('<div class="title">📄 AI Resume Screening & ATS System</div>', unsafe_allow_html=True)
 
 # -----------------------------
-# RESUME ANALYSIS FUNCTION
+# SIDEBAR DASHBOARD (FIXED)
 # -----------------------------
-def analyze_resume(resume_text):
-    text = resume_text.lower()
-    detected_skills = extract_skills(resume_text)
+st.sidebar.title("📊 Dashboard")
 
-    # Role prediction
-    if "machine learning" in text or "deep learning" in text:
+uploaded_file = st.file_uploader("📤 Upload Resume (PDF / DOCX)", type=["pdf", "docx"])
+
+if uploaded_file:
+    st.sidebar.success("Resume Uploaded ✔")
+else:
+    st.sidebar.warning("No Resume Uploaded ❌")
+
+st.sidebar.markdown("---")
+st.sidebar.write("✔ Role Prediction")
+st.sidebar.write("✔ Skill Extraction")
+st.sidebar.write("✔ AI Scoring")
+st.sidebar.write("✔ Download Report")
+
+# -----------------------------
+# ANALYSIS FUNCTION
+# -----------------------------
+def analyze_resume(text):
+
+    text_lower = text.lower()
+    skills = extract_skills(text)
+
+    # ROLE PREDICTION
+    if "machine learning" in text_lower:
         role = "Machine Learning Engineer"
-    elif "python" in text and "sql" in text:
+    elif "python" in text_lower and "sql" in text_lower:
         role = "Data Analyst"
-    elif any(x in text for x in ["html", "css", "javascript"]):
+    elif "html" in text_lower or "css" in text_lower:
         role = "Web Developer"
-    elif any(x in text for x in ["java", "c++"]):
+    elif "java" in text_lower:
         role = "Software Developer"
     else:
         role = "General IT Role"
 
-    # Score calculation
-    score = len(detected_skills) * 5
+    # SCORE (REALISTIC)
+    score = min(len(skills) * 12, 70)
 
-    if "experience" in text:
-        score += 30
-    if "education" in text:
-        score += 20
+    if "experience" in text_lower:
+        score += 15
+    if "education" in text_lower:
+        score += 10
 
     score = min(score, 100)
 
-    strength = "Strong 💪" if score > 70 else "Average 🙂" if score > 40 else "Weak ⚠️"
+    # STRENGTH
+    if score > 70:
+        strength = "Strong 💪"
+    elif score > 40:
+        strength = "Medium ⚡"
+    else:
+        strength = "Weak ⚠️"
 
-    return {
-        "predicted_role": role,
-        "resume_score": score,
-        "resume_strength": strength,
-        "skills": detected_skills
-    }
-
-# -----------------------------
-# REPORT GENERATOR
-# -----------------------------
-def generate_report(data):
-    return f"""
-RESUME SCREENING REPORT
-======================
-
-Predicted Role: {data['predicted_role']}
-Resume Score: {data['resume_score']}%
-Strength: {data['resume_strength']}
-Skills: {', '.join(data['skills'])}
-"""
+    return role, score, strength, skills
 
 # -----------------------------
-# DASHBOARD
-# -----------------------------
-def show_dashboard(score, skills):
-    st.subheader("📊 Skill Analysis Dashboard")
-
-    labels = ["Skills Found", "Missing Skills"]
-    values = [len(skills), max(10 - len(skills), 0)]
-
-    fig, ax = plt.subplots()
-    ax.pie(values, labels=labels, autopct="%1.1f%%")
-    ax.set_title("Resume Skill Distribution")
-
-    st.pyplot(fig)
-
-    st.subheader("📈 Resume Score Progress")
-    st.progress(score / 100)
-
-# -----------------------------
-# UI HEADER
-# -----------------------------
-st.title("📄 AI Resume Screening System")
-st.write("Upload your resume and get AI-powered analysis")
-
-# -----------------------------
-# FILE UPLOAD
-# -----------------------------
-uploaded_file = st.file_uploader(
-    "Upload Resume (PDF / DOCX)",
-    type=["pdf", "docx"]
-)
-
-# -----------------------------
-# PROCESS
+# PROCESS RESUME
 # -----------------------------
 if uploaded_file:
 
-    st.success("✅ Resume Uploaded Successfully")
+    st.success("Resume uploaded successfully ✔")
 
-    try:
-        resume_text = extract_text(uploaded_file)
+    with st.spinner("AI analyzing resume... 🤖"):
+        text = extract_text(uploaded_file)
 
-        if resume_text:
+    if text:
 
-            if st.button("🔍 Analyze Resume"):
+        role, score, strength, skills = analyze_resume(text)
 
-                with st.spinner("Analyzing Resume... 🤖"):
+        # -----------------------------
+        # METRICS DASHBOARD (FIXED)
+        # -----------------------------
+        st.subheader("📊 Dashboard Overview")
 
-                    data = analyze_resume(resume_text)
+        col1, col2, col3 = st.columns(3)
 
-                    st.success("✅ Analysis Complete")
+        col1.metric("🎯 Predicted Role", role)
+        col2.metric("📊 Score", f"{score}%")
+        col3.metric("💪 Strength", strength)
 
-                    # RESULTS
-                    st.markdown(f"### 🎯 Predicted Role: **{data['predicted_role']}**")
-                    st.markdown(f"### 📊 Score: **{data['resume_score']}%**")
-                    st.markdown(f"### 💪 Strength: **{data['resume_strength']}**")
+        st.write("---")
 
-                    st.markdown("### 🛠 Skills Detected")
-                    st.write(", ".join(data["skills"]) if data["skills"] else "No skills found")
+        # -----------------------------
+        # SKILLS GRAPH (FIXED)
+        # -----------------------------
+        st.subheader("📊 Skill Analysis")
 
-                    # DASHBOARD (IMPORTANT)
-                    show_dashboard(data["resume_score"], data["skills"])
+        if skills and len(skills) > 0:
 
-                    # DOWNLOAD REPORT
-                    report = generate_report(data)
+            unique_skills = list(set(skills))
 
-                    st.download_button(
-                        label="⬇ Download Report",
-                        data=report,
-                        file_name="resume_report.txt",
-                        mime="text/plain"
-                    )
+            fig, ax = plt.subplots()
+            ax.bar(unique_skills, [1] * len(unique_skills))
+            plt.xticks(rotation=45)
+
+            st.pyplot(fig)
 
         else:
-            st.error("⚠️ Could not extract text from resume")
+            st.warning("⚠️ No skills detected")
 
-    except Exception as e:
-        st.error(f"⚠️ Error: {e}")
+        # -----------------------------
+        # PIE CHART
+        # -----------------------------
+        st.subheader("📈 Score Visualization")
+
+        fig2, ax2 = plt.subplots()
+        ax2.pie(
+            [score, 100 - score],
+            labels=["Score", "Remaining"],
+            autopct="%1.1f%%"
+        )
+        st.pyplot(fig2)
+
+        # -----------------------------
+        # REPORT
+        # -----------------------------
+        report = f"""
+AI RESUME REPORT
+================
+
+Role: {role}
+Score: {score}%
+Strength: {strength}
+Skills: {', '.join(skills)}
+"""
+
+        st.download_button("⬇ Download Report", report, file_name="resume_report.txt")
+
+    else:
+        st.error("Could not extract text from resume")
+
+else:
+    st.info("👆 Upload a resume to start AI analysis")
