@@ -18,7 +18,7 @@ st.set_page_config(
 # -----------------------------
 def add_bg_image():
     BASE_DIR = os.path.dirname(__file__)
-    image_path = os.path.join(BASE_DIR, "assets", "bg.png.jpg")  # ✅ your image
+    image_path = os.path.join(BASE_DIR, "assets", "bg1.png.jpg")  # ✅ your image
 
     if os.path.exists(image_path):
         with open(image_path, "rb") as img:
