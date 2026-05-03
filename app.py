@@ -2,7 +2,7 @@ import streamlit as st
 import base64
 import os
 from utils.resume_parser import extract_text
-from backend.skills import extract_skills   # ✅ FIXED (no hardcoding)
+from backend.skills import extract_skills
 
 # -----------------------------
 # PAGE SETTINGS
@@ -16,7 +16,10 @@ st.set_page_config(
 # -----------------------------
 # Background Image
 # -----------------------------
-def add_bg_image(image_path):
+def add_bg_image():
+    BASE_DIR = os.path.dirname(__file__)
+    image_path = os.path.join(BASE_DIR, "assets", "bg.png.jpg")  # ✅ your image
+
     if os.path.exists(image_path):
         with open(image_path, "rb") as img:
             encoded = base64.b64encode(img.read()).decode()
@@ -25,7 +28,7 @@ def add_bg_image(image_path):
             f"""
             <style>
             .stApp {{
-                background-image: url("data:image/png;base64,{encoded}");
+                background-image: url("data:image/jpg;base64,{encoded}");
                 background-size: cover;
                 background-position: center;
                 background-repeat: no-repeat;
@@ -41,11 +44,10 @@ def add_bg_image(image_path):
             unsafe_allow_html=True
         )
     else:
-        st.warning("⚠️ Background image not found.")
+        st.error(f"❌ Image not found at: {image_path}")
 
-# ✅ FIXED path (remove double extension if needed)
-add_bg_image("assets/bg1.png")
-
+# call background
+add_bg_image()
 
 # -----------------------------
 # Resume Analysis
@@ -54,12 +56,9 @@ def analyze_resume(resume_text):
 
     text = resume_text.lower()
 
-    # ✅ Use backend function
     detected_skills = extract_skills(resume_text)
 
-    # -----------------------------
-    # Role Prediction (Improved)
-    # -----------------------------
+    # Role prediction
     if "machine learning" in text or "deep learning" in text:
         role = "Machine Learning Engineer"
 
@@ -75,9 +74,7 @@ def analyze_resume(resume_text):
     else:
         role = "General IT Role"
 
-    # -----------------------------
-    # Better Resume Score
-    # -----------------------------
+    # Score
     score = len(detected_skills) * 5
 
     if "experience" in text:
@@ -88,9 +85,7 @@ def analyze_resume(resume_text):
 
     score = min(score, 100)
 
-    # -----------------------------
     # Strength
-    # -----------------------------
     if score > 70:
         strength = "Strong"
     elif score > 40:
@@ -104,7 +99,6 @@ def analyze_resume(resume_text):
         "resume_strength": strength,
         "skills": detected_skills
     }
-
 
 # -----------------------------
 # Report Generator
@@ -127,7 +121,6 @@ Extracted Skills:
 {', '.join(data['skills'])}
 """
 
-
 # -----------------------------
 # UI
 # -----------------------------
@@ -139,7 +132,6 @@ uploaded_file = st.file_uploader(
     "Upload Resume",
     type=["pdf", "docx"]
 )
-
 
 # -----------------------------
 # PROCESS RESUME
