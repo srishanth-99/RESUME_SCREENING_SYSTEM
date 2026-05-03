@@ -5,175 +5,185 @@ from utils.resume_parser import extract_text
 from backend.skills import extract_skills
 
 # -----------------------------
-# PAGE SETTINGS
+# PAGE CONFIG
 # -----------------------------
 st.set_page_config(
-    page_title="Resume Screening System",
+    page_title="AI Resume Screening System",
     page_icon="📄",
     layout="centered"
 )
 
 # -----------------------------
-# Background Image
+# MODERN UI STYLING
 # -----------------------------
-def add_bg_image():
-    BASE_DIR = os.path.dirname(__file__)
-    image_path = os.path.join(BASE_DIR, "assets", "bg1.png.jpg")  # ✅ your image
+st.markdown("""
+<style>
 
-    if os.path.exists(image_path):
-        with open(image_path, "rb") as img:
-            encoded = base64.b64encode(img.read()).decode()
+/* Background */
+.stApp {
+    background: linear-gradient(to right, #eef2f3, #dfe9f3);
+    font-family: 'Arial';
+}
 
-        st.markdown(
-            f"""
-            <style>
-            .stApp {{
-                background-image: url("data:image/jpg;base64,{encoded}");
-                background-size: cover;
-                background-position: center;
-                background-repeat: no-repeat;
-            }}
+/* Main container */
+.block-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
 
-            .block-container {{
-                background-color: rgba(255,255,255,0.9);
-                padding: 2rem;
-                border-radius: 10px;
-            }}
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
-    else:
-        st.error(f"❌ Image not found at: {image_path}")
+/* Title */
+.main-title {
+    text-align: center;
+    font-size: 40px;
+    font-weight: bold;
+    color: #2C3E50;
+}
 
-# call background
-add_bg_image()
+/* Subtitle */
+.sub-title {
+    text-align: center;
+    color: gray;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+/* Cards */
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0px 4px 20px rgba(0,0,0,0.1);
+    margin-bottom: 15px;
+}
+
+/* Buttons */
+.stButton>button {
+    background-color: #4A90E2;
+    color: white;
+    border-radius: 10px;
+    padding: 0.5rem 1rem;
+    font-weight: bold;
+}
+
+/* Success box */
+.stAlert {
+    border-radius: 10px;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 # -----------------------------
-# Resume Analysis
+# HEADER
+# -----------------------------
+st.markdown("<div class='main-title'>📄 AI Resume Screening System</div>", unsafe_allow_html=True)
+st.markdown("<div class='sub-title'>Upload your resume and get instant AI-powered analysis</div>", unsafe_allow_html=True)
+
+# -----------------------------
+# FILE UPLOAD CARD
+# -----------------------------
+st.markdown("<div class='card'>", unsafe_allow_html=True)
+
+uploaded_file = st.file_uploader(
+    "📤 Upload your Resume (PDF / DOCX)",
+    type=["pdf", "docx"]
+)
+
+st.markdown("</div>", unsafe_allow_html=True)
+
+# -----------------------------
+# RESUME ANALYSIS FUNCTION
 # -----------------------------
 def analyze_resume(resume_text):
 
     text = resume_text.lower()
-
     detected_skills = extract_skills(resume_text)
 
-    # Role prediction
     if "machine learning" in text or "deep learning" in text:
         role = "Machine Learning Engineer"
-
     elif "python" in text and "sql" in text:
         role = "Data Analyst"
-
     elif any(x in text for x in ["html", "css", "javascript"]):
         role = "Web Developer"
-
     elif any(x in text for x in ["java", "c++"]):
         role = "Software Developer"
-
     else:
         role = "General IT Role"
 
-    # Score
     score = len(detected_skills) * 5
 
     if "experience" in text:
         score += 30
-
     if "education" in text:
         score += 20
 
     score = min(score, 100)
 
-    # Strength
-    if score > 70:
-        strength = "Strong"
-    elif score > 40:
-        strength = "Average"
-    else:
-        strength = "Weak"
+    strength = "Strong" if score > 70 else "Average" if score > 40 else "Weak"
 
     return {
-        "predicted_role": role,
-        "resume_score": score,
-        "resume_strength": strength,
+        "role": role,
+        "score": score,
+        "strength": strength,
         "skills": detected_skills
     }
 
 # -----------------------------
-# Report Generator
+# REPORT
 # -----------------------------
 def generate_report(data):
     return f"""
-RESUME SCREENING REPORT
-======================
+AI RESUME REPORT
+====================
 
-Predicted Role:
-{data['predicted_role']}
+Predicted Role: {data['role']}
+Score: {data['score']}%
+Strength: {data['strength']}
 
-Resume Quality Score:
-{data['resume_score']}%
-
-Resume Strength:
-{data['resume_strength']}
-
-Extracted Skills:
-{', '.join(data['skills'])}
+Skills: {', '.join(data['skills'])}
 """
 
 # -----------------------------
-# UI
-# -----------------------------
-st.title("📄 Resume Screening System")
-
-st.info("📌 Upload a resume in PDF or DOCX format")
-
-uploaded_file = st.file_uploader(
-    "Upload Resume",
-    type=["pdf", "docx"]
-)
-
-# -----------------------------
-# PROCESS RESUME
+# PROCESS
 # -----------------------------
 if uploaded_file:
 
-    st.success("✅ Resume Uploaded Successfully")
+    st.success("✅ Resume uploaded successfully!")
 
     try:
         resume_text = extract_text(uploaded_file)
 
-        if not resume_text:
-            st.error("⚠️ Unable to extract text from resume")
+        if st.button("🚀 Analyze Resume"):
 
-        else:
-            if st.button("🔍 Analyze Resume"):
+            with st.spinner("🤖 AI is analyzing your resume..."):
+                import time
+                time.sleep(2)
 
-                with st.spinner("Analyzing Resume..."):
+                data = analyze_resume(resume_text)
 
-                    data = analyze_resume(resume_text)
+            st.success("🎉 Analysis Complete!")
 
-                    st.success("✅ Analysis Complete")
+            # ---------------- RESULTS ----------------
+            st.markdown("<div class='card'>", unsafe_allow_html=True)
 
-                    st.markdown(f"### 🎯 Predicted Role: **{data['predicted_role']}**")
-                    st.markdown(f"### 📊 Resume Score: **{data['resume_score']}%**")
-                    st.markdown(f"### 💪 Resume Strength: **{data['resume_strength']}**")
+            st.markdown(f"### 🎯 Predicted Role: **{data['role']}**")
+            st.markdown(f"### 📊 Score: **{data['score']}%**")
+            st.markdown(f"### 💪 Strength: **{data['strength']}**")
 
-                    st.markdown("### 🛠 Detected Skills")
+            st.markdown("### 🛠 Skills Detected")
+            st.write(", ".join(data['skills']) if data['skills'] else "No skills found")
 
-                    if data["skills"]:
-                        st.write(", ".join(data["skills"]))
-                    else:
-                        st.write("No skills detected")
+            st.markdown("</div>", unsafe_allow_html=True)
 
-                    report_text = generate_report(data)
+            # ---------------- DOWNLOAD ----------------
+            report = generate_report(data)
 
-                    st.download_button(
-                        label="⬇ Download Report",
-                        data=report_text,
-                        file_name="resume_report.txt",
-                        mime="text/plain"
-                    )
+            st.download_button(
+                "⬇ Download Report",
+                report,
+                file_name="resume_report.txt",
+                mime="text/plain"
+            )
 
     except Exception as e:
-        st.error(f"⚠️ Error processing resume: {e}")
+        st.error(f"⚠️ Error: {e}")
