@@ -10,41 +10,36 @@ from backend.skills import extract_skills
 st.set_page_config(
     page_title="AI Resume Screening System",
     page_icon="📄",
-    layout="centered"
+    layout="wide"
 )
 
 # -----------------------------
-# MODERN UI STYLING
+# CUSTOM CSS (PRO UI)
 # -----------------------------
 st.markdown("""
 <style>
 
-/* Background */
-.stApp {
-    background: linear-gradient(to right, #eef2f3, #dfe9f3);
-    font-family: 'Arial';
+body {
+    background-color: #0f172a;
 }
 
-/* Main container */
-.block-container {
-    padding-top: 2rem;
-    padding-bottom: 2rem;
+.stApp {
+    background: linear-gradient(to right, #0f172a, #1e293b);
 }
 
 /* Title */
-.main-title {
+.title {
+    font-size: 42px;
+    font-weight: 800;
+    color: #38bdf8;
     text-align: center;
-    font-size: 40px;
-    font-weight: bold;
-    color: #2C3E50;
 }
 
 /* Subtitle */
-.sub-title {
+.subtitle {
     text-align: center;
-    color: gray;
-    font-size: 16px;
-    margin-bottom: 20px;
+    color: #cbd5e1;
+    font-size: 18px;
 }
 
 /* Cards */
@@ -52,22 +47,18 @@ st.markdown("""
     background: white;
     padding: 20px;
     border-radius: 15px;
-    box-shadow: 0px 4px 20px rgba(0,0,0,0.1);
-    margin-bottom: 15px;
+    box-shadow: 0px 4px 20px rgba(0,0,0,0.2);
+    margin-top: 10px;
 }
 
 /* Buttons */
 .stButton>button {
-    background-color: #4A90E2;
+    background-color: #38bdf8;
     color: white;
-    border-radius: 10px;
-    padding: 0.5rem 1rem;
     font-weight: bold;
-}
-
-/* Success box */
-.stAlert {
     border-radius: 10px;
+    height: 45px;
+    width: 100%;
 }
 
 </style>
@@ -76,114 +67,102 @@ st.markdown("""
 # -----------------------------
 # HEADER
 # -----------------------------
-st.markdown("<div class='main-title'>📄 AI Resume Screening System</div>", unsafe_allow_html=True)
-st.markdown("<div class='sub-title'>Upload your resume and get instant AI-powered analysis</div>", unsafe_allow_html=True)
+st.markdown('<div class="title">📄 AI Resume Screening System</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">Upload your resume and get instant AI analysis 🚀</div>', unsafe_allow_html=True)
+
+st.write("")
 
 # -----------------------------
-# FILE UPLOAD CARD
+# FILE UPLOAD
 # -----------------------------
-st.markdown("<div class='card'>", unsafe_allow_html=True)
-
-uploaded_file = st.file_uploader(
-    "📤 Upload your Resume (PDF / DOCX)",
-    type=["pdf", "docx"]
-)
-
-st.markdown("</div>", unsafe_allow_html=True)
+uploaded_file = st.file_uploader("📤 Upload Resume (PDF / DOCX)", type=["pdf", "docx"])
 
 # -----------------------------
-# RESUME ANALYSIS FUNCTION
+# ANALYSIS FUNCTION
 # -----------------------------
-def analyze_resume(resume_text):
+def analyze_resume(text):
 
-    text = resume_text.lower()
-    detected_skills = extract_skills(resume_text)
+    text_lower = text.lower()
+    skills = extract_skills(text)
 
-    if "machine learning" in text or "deep learning" in text:
+    if "machine learning" in text_lower:
         role = "Machine Learning Engineer"
-    elif "python" in text and "sql" in text:
+    elif "python" in text_lower and "sql" in text_lower:
         role = "Data Analyst"
-    elif any(x in text for x in ["html", "css", "javascript"]):
+    elif "html" in text_lower or "css" in text_lower:
         role = "Web Developer"
-    elif any(x in text for x in ["java", "c++"]):
+    elif "java" in text_lower:
         role = "Software Developer"
     else:
         role = "General IT Role"
 
-    score = len(detected_skills) * 5
+    score = len(skills) * 8
 
-    if "experience" in text:
-        score += 30
-    if "education" in text:
+    if "experience" in text_lower:
+        score += 25
+    if "education" in text_lower:
         score += 20
 
     score = min(score, 100)
 
-    strength = "Strong" if score > 70 else "Average" if score > 40 else "Weak"
+    if score > 70:
+        strength = "Strong 💪"
+    elif score > 40:
+        strength = "Medium ⚡"
+    else:
+        strength = "Weak ⚠️"
 
-    return {
-        "role": role,
-        "score": score,
-        "strength": strength,
-        "skills": detected_skills
-    }
-
-# -----------------------------
-# REPORT
-# -----------------------------
-def generate_report(data):
-    return f"""
-AI RESUME REPORT
-====================
-
-Predicted Role: {data['role']}
-Score: {data['score']}%
-Strength: {data['strength']}
-
-Skills: {', '.join(data['skills'])}
-"""
+    return role, score, strength, skills
 
 # -----------------------------
 # PROCESS
 # -----------------------------
 if uploaded_file:
 
-    st.success("✅ Resume uploaded successfully!")
+    st.success("File uploaded successfully ✔")
 
-    try:
-        resume_text = extract_text(uploaded_file)
+    with st.spinner("🤖 AI is analyzing your resume..."):
+        text = extract_text(uploaded_file)
 
-        if st.button("🚀 Analyze Resume"):
+    if text:
 
-            with st.spinner("🤖 AI is analyzing your resume..."):
-                import time
-                time.sleep(2)
+        role, score, strength, skills = analyze_resume(text)
 
-                data = analyze_resume(resume_text)
+        st.markdown("## 📊 Analysis Report")
 
-            st.success("🎉 Analysis Complete!")
+        col1, col2, col3 = st.columns(3)
 
-            # ---------------- RESULTS ----------------
-            st.markdown("<div class='card'>", unsafe_allow_html=True)
+        with col1:
+            st.markdown(f"<div class='card'><h3>🎯 Role</h3><p>{role}</p></div>", unsafe_allow_html=True)
 
-            st.markdown(f"### 🎯 Predicted Role: **{data['role']}**")
-            st.markdown(f"### 📊 Score: **{data['score']}%**")
-            st.markdown(f"### 💪 Strength: **{data['strength']}**")
+        with col2:
+            st.markdown(f"<div class='card'><h3>📈 Score</h3><p>{score}%</p></div>", unsafe_allow_html=True)
 
-            st.markdown("### 🛠 Skills Detected")
-            st.write(", ".join(data['skills']) if data['skills'] else "No skills found")
+        with col3:
+            st.markdown(f"<div class='card'><h3>💪 Strength</h3><p>{strength}</p></div>", unsafe_allow_html=True)
 
-            st.markdown("</div>", unsafe_allow_html=True)
+        st.write("")
 
-            # ---------------- DOWNLOAD ----------------
-            report = generate_report(data)
+        st.markdown("## 🛠 Skills Found")
+        if skills:
+            st.success(", ".join(skills))
+        else:
+            st.warning("No skills detected")
 
-            st.download_button(
-                "⬇ Download Report",
-                report,
-                file_name="resume_report.txt",
-                mime="text/plain"
-            )
+        # Download Report
+        report = f"""
+Resume Report
 
-    except Exception as e:
-        st.error(f"⚠️ Error: {e}")
+Role: {role}
+Score: {score}%
+Strength: {strength}
+Skills: {', '.join(skills)}
+"""
+
+        st.download_button("⬇ Download Report", report, file_name="resume_report.txt")
+
+    else:
+        st.error("Could not read resume text")
+
+else:
+    st.info("👆 Upload a resume to start analysis")
